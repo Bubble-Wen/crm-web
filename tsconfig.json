@@ -38,5 +38,6 @@
     "dist",
     "node_modules",
     "/src/components/ProTable/index.vue",
+    "src/views/Product/components/ScheduleStatusDialog.vue"
   ]
 }
