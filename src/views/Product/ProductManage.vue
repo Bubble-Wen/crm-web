@@ -26,7 +26,7 @@
     <!-- 商品新增/编辑弹窗 -->
     <ProductDialog ref="dialogRef" />
     <!-- 定时上下架弹窗：使用重命名后的组件 -->
-    <ProductStateDialog ref="scheduleDialogRef" />
+    <ProductStateDialog ref="stateDialogRef" />
   </div>
 </template>
 
@@ -41,11 +41,16 @@ import ProductDialog from './components/ProductDialog.vue'
 // 导入重命名后的定时上下架弹窗
 import ProductStateDialog from './components/ProductStateDialog.vue'
 
-// 表格实例
-const proTable = ref()
+// 定义与 ref 同名的变量
+const proTable = ref<InstanceType<typeof ProTable>>()
+
+// 必须通过 defineExpose 暴露 proTable
+defineExpose({
+  proTable
+})
 // 弹窗实例
 const dialogRef = ref()
-const scheduleDialogRef = ref()
+const stateDialogRef = ref()
 
 // 初始化参数
 const initParam = reactive({})
@@ -111,7 +116,7 @@ const openDrawer = (title: string, row: Partial<any> = {}) => {
     row: { ...row },
     isView: title === '查看',
     api: ProductApi.saveOrEdit,
-    getTableList: proTable.value.getTableList,
+    getTableList: ProTable.value.getTableList,
     maxHeight: '300px'
   }
   dialogRef.value.acceptParams(params)
@@ -124,9 +129,9 @@ const openStateDialog = (title: string, row: Partial<any> = {}) => {
     row: { ...row },
     isView: false,
     api: ProductApi.saveOrEdit,
-    getTableList: proTable.value.getTableList,
+    getTableList: ProTable.value.getTableList,
     maxHeight: '150px'
   }
-  scheduleDialogRef.value.acceptParams(params)
+  stateDialogRef.value.acceptParams(params)
 }
 </script>

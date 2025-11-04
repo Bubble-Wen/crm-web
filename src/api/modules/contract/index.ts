@@ -1,0 +1,13 @@
+import http from '@/api'
+import { COMMON_ADMIN_API } from '@/api/axios/servicePort'
+
+/**
+ * @name 合同管理
+ */
+export const ContractApi = {
+  page: (params: any) => http.post(COMMON_ADMIN_API + '/contract/page', params),
+  list: (params: any) => http.post(COMMON_ADMIN_API + '/contract/list', params),
+  saveOrEdit: (params: any) => http.post(COMMON_ADMIN_API + '/contract/saveOrEdit', params),
+  remove: (params: any) => http.post(COMMON_ADMIN_API + '/contract/remove', params),
+  export: (params: any) => http.post(COMMON_ADMIN_API + '/contract/export', params, { responseType: 'blob' })
+}

@@ -30,27 +30,27 @@
           <el-input v-model="dialogProps.row!.address" placeholder="请填写客户地址" clearable maxlength="50" show-word-limit></el-input>
         </el-form-item>
         <el-form-item label="客户等级" prop="level">
-          <el-select v-model="dialogProps.row!.level" filterable placeholder="请选择客户等级">
+          <el-select v-model="dialogProps.row!.level" filterable="请选择客户等级">
             <el-option v-for="item in Object.values(CustomerLevelList)" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="客户来源" prop="source">
-          <el-select v-model="dialogProps.row!.source" filterable placeholder="请选择客户来源">
+          <el-select v-model="dialogProps.row!.source" filterable="请选择客户来源">
             <el-option v-for="item in Object.values(CustomerSourceList)" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="跟进状态" prop="followStatus">
-          <el-select v-model="dialogProps.row!.followStatus" filterable placeholder="请选择客户跟进状态">
+          <el-select v-model="dialogProps.row!.followStatus" filterable="请选择客户跟进状态">
             <el-option v-for="item in Object.values(FollowUpStatusList)" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="是否为关键决策人" prop="isKeyDecisionMaker">
-          <el-select v-model="dialogProps.row!.isKeyDecisionMaker" filterable placeholder="请选择客户跟进状态">
+          <el-select v-model="dialogProps.row!.isKeyDecisionMaker" filterable="请选择客户是否为关键决策人">
             <el-option v-for="item in Object.values(IsKeyDecisionMakerList)" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="客户性别" prop="gender">
-          <el-select v-model="dialogProps.row!.gender" filterable placeholder="请选择客户跟进状态">
+          <el-select v-model="dialogProps.row!.gender" filterable="请选择客户性别">
             <el-option v-for="item in Object.values(GenderList)" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
@@ -86,7 +86,7 @@ const dialogProps = ref<DialogProps>({
   title: '',
   row: {},
   labelWidth: 160,
-  fullscreen: true,
+  fullscreen: false,
   maxHeight: '500px'
 })
 
@@ -103,7 +103,7 @@ defineExpose({
 const rules = reactive({
   name: [{ required: true, message: '请输入客户名称', trigger: 'blur' }],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { required: true, message: '请输入客户手机号', trigger: 'blur' },
     {
       pattern: /^1[3-9]\d{9}$/,
       message: '手机号格式不正确',

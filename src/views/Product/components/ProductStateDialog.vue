@@ -21,7 +21,7 @@
           <el-date-picker
             v-model="dialogProps.row.time"
             type="datetime"
-            :placeholder="'请选择' + dialogProps.title + '时间'"
+            :placeholder="`请选择${dialogProps.title}时间`"
             value-format="YYYY-MM-DD HH:mm:ss"
             :disabled-date="(time) => time.getTime() < Date.now() - 8.64e7"
           />
@@ -30,29 +30,24 @@
     </div>
 
     <template #footer>
-      <el-button @click="cancelDialog">取消</el-button>
-      <el-button type="primary" v-show="!dialogProps.isView" @click="handleSubmit"> 确定 </el-button>
+      <solt name="footer">
+        <el-button @click="cancelDialog">取消</el-button>
+        <el-button type="primary" v-show="!dialogProps.isView" @click="handleSubmit"> 确定 </el-button>
+      </solt>
     </template>
   </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ElMessage, FormInstance } from 'element-plus'
+import { dayjs, ElMessage, FormInstance } from 'element-plus'
 import { Dialog } from '@/components/Dialog'
 
 interface DialogProps {
   title: string
   isView: boolean
   fullscreen?: boolean
-  row: {
-    time?: string
-    onShelfTime?: string
-    offShelfTime?: string
-    updateTime?: string
-    createTime?: string
-    [key: string]: any
-  }
+  row: any
   labelWidth?: number
   maxHeight?: number | string
   api?: (params: any) => Promise<any>
@@ -63,20 +58,22 @@ const dialogVisible = ref(false)
 const dialogProps = ref<DialogProps>({
   isView: false,
   title: '',
-  row: {},
+  row: {}, // 初始化时必须包含id，避免后端无更新目标
   labelWidth: 160,
-  fullscreen: true,
+  fullscreen: false,
   maxHeight: '500px'
 })
 
 const acceptParams = (params: DialogProps): void => {
-  dialogProps.value.row = { ...dialogProps.value.row, ...params.row }
+  params.row = { ...dialogProps.value.row, ...params.row }
+  // 深度合并参数，确保id和基础信息不丢失
+  dialogProps.value = { ...dialogProps.value, ...params }
+  // 严格区分上架/下架的时间初始化
   if (dialogProps.value.title === '商品上架') {
     dialogProps.value.row.time = dialogProps.value.row.onShelfTime
   } else {
     dialogProps.value.row.time = dialogProps.value.row.offShelfTime
   }
-  dialogProps.value = { ...dialogProps.value, ...params }
   dialogVisible.value = true
 }
 
@@ -90,13 +87,13 @@ const rules = computed(() => ({
       trigger: 'blur'
     },
     {
-      validator: (rule: any, value: string, callback: any) => {
+      validator: (rule, value, callback) => {
         if (!value) {
           return callback(new Error(`请选择${dialogProps.value.title}时间`))
         }
-        const now = new Date()
-        const selected = new Date(value)
-        if (selected.getTime() < now.getTime() - 8.64e7) {
+        const now = dayjs()
+        const selected = dayjs(value)
+        if (selected.isBefore(now, 'minute')) {
           return callback(new Error(`${dialogProps.value.title}时间不能早于当前时间`))
         }
         callback()
@@ -113,34 +110,37 @@ const handleSubmit = () => {
     if (!valid) return
 
     try {
-      delete dialogProps.value.row.updateTime
-      delete dialogProps.value.row.createTime
+      // 清理无关字段，避免后端解析异常
+      // const submitData = { ...dialogProps.value.row }
+      delete dialogProps.value.row['updateTime']
+      delete dialogProps.value.row['createTime']
 
-      if (dialogProps.value.title === '商品上架') {
+      // 明确区分上架/下架的状态和时间字段
+      if (dialogProps.value.title === '商品定时上架') {
         dialogProps.value.row.onShelfTime = dialogProps.value.row.time
       } else {
         dialogProps.value.row.offShelfTime = dialogProps.value.row.time
       }
 
-      if (dialogProps.value.api) {
-        await dialogProps.value.api(dialogProps.value.row)
-        ElMessage.success(`${dialogProps.value.title}成功！`)
-        dialogProps.value.getTableList?.()
-        dialogVisible.value = false
-        ruleFormRef.value?.resetFields()
-      }
+      await dialogProps.value.api!(dialogProps.value.row)
+      ElMessage.success({ message: `${dialogProps.value.title}}成功！` })
+      dialogProps.value.getTableList?.()
+      dialogVisible.value = false
+      ruleFormRef.value?.resetFields()
+      cancelDialog(true)
     } catch (error) {
-      console.log(error)
+      console.log('操作失败：', error)
+      // ElMessage.error(`${dialogProps.value.title}失败，请重试！`)
     }
   })
 }
 
 const cancelDialog = (isClean?: boolean) => {
   dialogVisible.value = false
-  const condition = ['查看', '编辑'].includes(dialogProps.value.title) || isClean
-  if (condition) {
-    dialogProps.value.row = {}
-    ruleFormRef.value?.resetFields()
+  let condition = ['查看', '编辑']
+  if (condition.includes(dialogProps.value.title) || isClean) {
+    dialogProps.value.row = {} // 重置时保留id，避免下次无更新目标
+    ruleFormRef.value!.resetFields()
   }
 }
 </script>

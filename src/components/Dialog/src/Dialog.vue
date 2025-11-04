@@ -53,7 +53,7 @@ const slots = useSlots()
 const isFullscreen = ref(false)
 
 const toggleFull = () => {
-  isFullscreen.value = !unref(isFullscreen)
+  isFullscreen.value = !unref(props.fullscreen)
 }
 
 const dialogHeight = ref(isNumber(props.maxHeight) ? `${props.maxHeight}px` : props.maxHeight)
