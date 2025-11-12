@@ -117,3 +117,62 @@ export namespace Forum {
     nickname: string
   }
 }
+
+// * 操作日志模块
+export namespace SysOperLog {
+  // 日志查询参数
+  export interface ReqOperLogParams extends ReqPage {
+    operName?: string
+    operType?: number
+    status?: number
+    startTime?: string
+    endTime?: string
+  }
+
+  // 日志列表项
+  export interface ResOperLogList {
+    id: number
+    title: string
+    operType: number
+    operName: string
+    operTime: string
+    operIp: string
+    operLocation: string
+    status: number
+    errorMsg?: string
+    operUrl?: string
+    requestMethod?: string
+    operParam?: string
+    jsonResult?: string
+    costTime?: number
+  }
+}
+
+export interface TradeArray {
+  timeList: string[]
+  countList?: number[]
+}
+
+// src/api/interface/index.ts (补充以下内容)
+export interface DashboardStatistics {
+  newCustomerCount: number
+  customerChange: number
+  newLeadCount: number
+  leadChange: number
+  newContractCount: number
+  contractChange: number
+  contractAmount: number
+  amountChange: number
+}
+export interface DashboardTrend {
+  dates: string[]
+  customerData: number[]
+  leadData: number[]
+  contractData: number[]
+}
+export interface DashboardResponse extends IResponse {
+  data: {
+    statistics: DashboardStatistics
+    trend: DashboardTrend
+  }
+}

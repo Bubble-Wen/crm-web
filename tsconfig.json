@@ -38,6 +38,7 @@
     "dist",
     "node_modules",
     "/src/components/ProTable/index.vue",
-    "src/views/Product/components/ScheduleStatusDialog.vue"
+    "src/views/Product/components/ScheduleStatusDialog.vue",
+    "src/views/System/components/OperLogDialog.vue"  // 新增：排除不存在的文件
   ]
 }
