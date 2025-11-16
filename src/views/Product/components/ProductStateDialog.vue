@@ -30,10 +30,10 @@
     </div>
 
     <template #footer>
-      <solt name="footer">
+      <slot name="footer">
         <el-button @click="cancelDialog">取消</el-button>
         <el-button type="primary" v-show="!dialogProps.isView" @click="handleSubmit"> 确定 </el-button>
-      </solt>
+      </slot>
     </template>
   </Dialog>
 </template>

@@ -1,6 +1,7 @@
 // src/api/modules/dashboard/index.ts
 import http from '@/api'
 import { COMMON_ADMIN_API } from '@/api/axios/servicePort'
+
 /**
  * @name 仪表盘数据统计
  */
@@ -13,17 +14,29 @@ export interface DashboardStatistics {
   contractChange: number
   contractAmount: number
   amountChange: number
+
+  // 新增审核统计字段
+  todayApprovedContractCount: number
+  approvedContractChange: number
+  todayRejectedContractCount: number
+  rejectedContractChange: number
 }
+
 export interface DashboardTrend {
   dates: string[]
   customerData: number[]
   leadData: number[]
   contractData: number[]
+  // 新增审核趋势数据
+  approvedData: number[]
+  rejectedData: number[]
 }
+
 export interface DashboardResponse {
   statistics: DashboardStatistics
   trend: DashboardTrend
 }
+
 /**
  * @name 仪表盘数据统计
  */

@@ -12,7 +12,7 @@
       <!-- 表格 header 按钮 -->
       <template #tableHeader="scope" v-if="props.isShowHeader">
         <el-button type="primary" :icon="CirclePlus" v-hasPermi="['sys:customer:add']" @click="openDrawer('新增')">新增客户</el-button>
-        <el-button type="danger" :icon="Delete" :disabled="!scope.isSelected" v-hasPermi="['...']" @click="batchDelete(scope.selectedListIds)">批量删除</el-button>
+        <el-button type="danger" :icon="Delete" :disabled="!scope.isSelected" v-hasPermi="['sys:customer:remove']" @click="batchDelete(scope.selectedListIds)">批量删除</el-button>
         <el-button type="primary" :icon="Download" plain @click="downloadFile" v-hasPermi="['sys:customer:export']">导出客户</el-button>
       </template>
       <!-- 表格操作 -->
@@ -49,8 +49,8 @@ const props = defineProps({
 defineExpose({
   proTable
 })
-// 初始化请求参数
 
+// 初始化请求参数
 const initParam = reactive({ isPublic: 0 })
 const dataSize = ref(0)
 
@@ -81,7 +81,8 @@ const columns: ColumnProps[] = [
   {
     prop: 'email',
     label: '邮箱',
-    minWidth: 150
+    search: { el: 'input' },
+    minWidth: 180
   },
   {
     prop: 'gender',
@@ -167,6 +168,7 @@ const batchDelete = async (ids: any[]) => {
   proTable.value.clearSelection()
   proTable.value.getTableList()
 }
+
 // 导出列表
 const downloadFile = async () => {
   if (dataSize.value === 0) {
@@ -181,6 +183,7 @@ const downloadFile = async () => {
     ElMessageBox.confirm('确认导出客户记录吗？', '温馨提示', { type: 'warning' }).then(() => useDownload(CustomerApi.export, '客户列表', proTable.value?.searchParam))
   }
 }
+
 // 转入公海
 const customerToPublic = async (id: any) => {
   await useHandleData(CustomerApi.toPublic, { id: id }, '转入公海')
