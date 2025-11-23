@@ -19,15 +19,16 @@
         :hide-required-asterisk="dialogProps.isView"
       >
         <el-form-item label="合同编号" prop="number" v-if="dialogProps.row!.id">
-          <el-input v-model="dialogProps.row!.number" readonly="true" show-word-limit></el-input>
+          <!-- 修复：readonly="true" → readonly（布尔值） -->
+          <el-input v-model="dialogProps.row!.number" readonly show-word-limit></el-input>
         </el-form-item>
         <el-form-item label="合同名称" prop="name">
           <el-input v-model="dialogProps.row!.name" clearable maxlength="100" show-word-limit></el-input>
         </el-form-item>
         <el-form-item label="签约客户" prop="customerId">
           <div class="flex" style="width: 100%">
-            <el-input v-model="dialogProps.row!.customerName" placeholder="请选择要签约的客户" class="mr-18px" disabled> </el-input>
-
+            <!-- 修复：disabled → :disabled（布尔值绑定） -->
+            <el-input v-model="dialogProps.row!.customerName" placeholder="请选择要签约的客户" class="mr-18px" :disabled="true"> </el-input>
             <el-button type="primary" @click="openCustomerDialog">客户信息</el-button>
             <CustomerDialog ref="customerRef" @get-customer-data="openCustomerDialog" />
           </div>
@@ -63,10 +64,12 @@
         </div>
         <div class="flex" style="width: 100%">
           <el-form-item label="合同总金额" prop="amount" style="flex: 1">
-            <el-input v-model="dialogProps.row!.amount" clearable readonly="true"></el-input>
+            <!-- 修复：readonly="true" → :readonly="true"（布尔值绑定） -->
+            <el-input v-model="dialogProps.row!.amount" clearable :readonly="true"></el-input>
           </el-form-item>
           <el-form-item label="已收款项" prop="receivedAmount" style="flex: 1">
-            <el-input v-model="dialogProps.row!.receivedAmount" clearable readonly="true"></el-input>
+            <!-- 修复：readonly="true" → :readonly="true"（布尔值绑定） -->
+            <el-input v-model="dialogProps.row!.receivedAmount" clearable :readonly="true"></el-input>
           </el-form-item>
         </div>
         <el-form-item label="备注" prop="remark">
@@ -150,11 +153,11 @@ defineExpose({
   acceptParams
 })
 
-// ✅ 自定义校验函数
+// 自定义校验函数 - 修复逻辑错误：endTime 与 startTime 对比反了
 const validateEndTime = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请选择合同结束时间'))
-  } else if (dialogProps.value.row.startTime && new Date(value) < new Date(dialogProps.value.row.endTime)) {
+  } else if (dialogProps.value.row.startTime && new Date(value) < new Date(dialogProps.value.row.startTime)) {
     callback(new Error('合同结束时间不能早于开始时间'))
   } else {
     callback()
@@ -172,6 +175,7 @@ const rules = reactive({
     }
   ],
   signTime: [{ required: true, message: '请选择合同签约时间', trigger: 'blur' }]
+  // 销售邮箱不添加校验规则，仅做展示
 })
 
 // 新增一行
@@ -188,51 +192,85 @@ const addContractProduct = () => {
 // 删除指定行
 const removeContractProduct = (index) => {
   dialogProps.value.row.products.splice(index, 1)
+  // 删除后重新计算总金额（避免总金额残留已删除商品的金额）
+  calculateTotalAmount()
 }
 
-// 计算小计（可选，实时更新单价×数量）
+// 计算小计
 const calculateSubtotal = (item) => {
   item.totalPrice = item.price * item.count
-  // 重新计算合同总金额，避免累加错误
-  dialogProps.value.row.amount = dialogProps.value.row.products.reduce((total, product) => total + product.price * product.count, 0)
+  calculateTotalAmount()
+}
+
+// 计算合同总金额（提取为独立方法，便于复用）
+const calculateTotalAmount = () => {
+  dialogProps.value.row.amount = dialogProps.value.row.products.reduce((total, product) => total + (product.price || 0) * (product.count || 0), 0)
 }
 
 const ruleFormRef = ref<FormInstance>()
 
 const handleSubmit = () => {
-  ruleFormRef.value!.validate(async (valid) => {
+  if (!ruleFormRef.value) return // 避免 null 调用
+  ruleFormRef.value.validate(async (valid) => {
     if (!valid) return
     try {
-      delete dialogProps.value.row['updateTime']
-      delete dialogProps.value.row['createTime']
-      await dialogProps.value.api!(dialogProps.value.row)
+      // 深拷贝避免修改原对象
+      const submitData = { ...dialogProps.value.row }
+      delete submitData.updateTime
+      delete submitData.createTime
+
+      // 校验是否添加了商品
+      if (submitData.products.length === 0) {
+        ElMessage.error('请至少添加一个合同产品')
+        return
+      }
+
+      // 校验商品信息完整性
+      const invalidProduct = submitData.products.find((item) => !item.pId || !item.pName || item.price <= 0 || item.count <= 0)
+      if (invalidProduct) {
+        ElMessage.error('商品信息不完整（请选择有效商品并填写数量）')
+        return
+      }
+
+      await dialogProps.value.api!(submitData)
       ElMessage.success({ message: `${dialogProps.value.title}成功！` })
-      dialogProps.value.getTableList!()
+      await dialogProps.value.getTableList!() // 等待列表刷新完成
       dialogVisible.value = false
-      ruleFormRef.value!.resetFields()
+      if (ruleFormRef.value) {
+        ruleFormRef.value.resetFields()
+      }
       cancelDialog(true)
-    } catch (error) {
-      console.log(error)
+    } catch (error: any) {
+      console.error('提交失败：', error)
+      ElMessage.error(`提交失败：${error.response?.data?.msg || '服务器异常'}`)
     }
   })
 }
+
 const cancelDialog = (isClean?: boolean) => {
   dialogVisible.value = false
-  let condition = ['查看', '编辑']
+  const condition = ['查看', '编辑']
   if (condition.includes(dialogProps.value.title) || isClean) {
-    dialogProps.value.row = {}
-    ruleFormRef.value!.resetFields()
+    dialogProps.value.row = {
+      products: [],
+      salesEmail: '' // 重置时保留销售邮箱字段
+    }
+    if (ruleFormRef.value) {
+      ruleFormRef.value.resetFields()
+    }
   }
 }
 
 // 打开客户列表
 const customerRef = ref()
-const openCustomerDialog = (val) => {
-  let params = {
+const openCustomerDialog = (val?: any) => {
+  const params = {
     title: '客户列表'
   }
-  customerRef.value.acceptParams(params)
-  if (val.id && val.name) {
+  if (customerRef.value) {
+    customerRef.value.acceptParams(params)
+  }
+  if (val?.id && val?.name) {
     dialogProps.value.row.customerId = String(val.id)
     dialogProps.value.row.customerName = val.name
   }
@@ -241,17 +279,19 @@ const openCustomerDialog = (val) => {
 // 打开商品列表
 const productRef = ref()
 const currentIndex = ref(0)
-const openProductDialog = (index) => {
+const openProductDialog = (index: number) => {
   currentIndex.value = index
   console.log('当前行索引：', index)
-  let params = {
+  const params = {
     title: '商品列表'
   }
-  productRef.value.acceptParams(params)
+  if (productRef.value) {
+    productRef.value.acceptParams(params)
+  }
 }
 
 // 子组件回调回来选中的商品
-const onProductSelect = (val) => {
+const onProductSelect = (val: any) => {
   const index = currentIndex.value
   if (val?.id && val?.name && val?.price) {
     dialogProps.value.row.products[index].pId = val.id

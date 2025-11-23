@@ -12,8 +12,8 @@
     >
       <!-- 表格操作 -->
       <template #operation="scope">
-        <el-button type="success" link :icon="CircleCheckFilled" @click="showApprovalDialog(scope.row, 0)">审核通过</el-button>
-        <el-button type="danger" link :icon="CircleCloseFilled" @click="showApprovalDialog(scope.row, 1)">审核拒绝</el-button>
+        <el-button type="success" link :icon="CircleCheckFilled" v-hasPermi="['sys:contract:pass']" @click="showApprovalDialog(scope.row, 0)">审核通过</el-button>
+        <el-button type="danger" link :icon="CircleCloseFilled" v-hasPermi="['sys:contract:reject']" @click="showApprovalDialog(scope.row, 1)">审核拒绝</el-button>
       </template>
     </ProTable>
 

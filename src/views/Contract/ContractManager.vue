@@ -1,28 +1,32 @@
 <template>
-  <div class="table-box">
-    <ProTable
-      ref="proTable"
-      title="合同列表"
-      rowKey="id"
-      :columns="columns"
-      :requestApi="ContractApi.page"
-      :initParam="initParam"
-      :dataCallback="dataCallback"
-      :searchCol="{ xs: 2, sm: 3, md: 4, lg: 6, xl: 8 }"
-    >
-      <template #tableHeader>
-        <el-button type="primary" :icon="CirclePlus" @click="openDrawer('新增')">新增合同</el-button>
-      </template>
+  <!-- 修复：唯一根元素包裹所有内容，删除多余的外部节点 -->
+  <div class="contract-manager">
+    <div class="table-box">
+      <ProTable
+        ref="proTable"
+        title="合同列表"
+        rowKey="id"
+        :columns="columns"
+        :requestApi="ContractApi.page"
+        :initParam="initParam"
+        :dataCallback="dataCallback"
+        :searchCol="{ xs: 2, sm: 3, md: 4, lg: 6, xl: 8 }"
+      >
+        <template #tableHeader>
+          <el-button type="primary" :icon="CirclePlus" @click="openDrawer('新增')">新增合同</el-button>
+        </template>
 
-      <!-- 表格操作 -->
-      <template #operation="scope">
-        <el-button type="primary" link :icon="EditPen" @click="openDrawer('编辑', scope.row)">编辑</el-button>
-        <el-button type="success" link :icon="Printer" @click="handleContractPrint(scope.row)">打印</el-button>
-        <el-button type="info" link :icon="Share" v-if="scope.row.status === 0" @click="startApproval(scope.row)">审核</el-button>
-      </template>
-    </ProTable>
+        <!-- 表格操作 -->
+        <template #operation="scope">
+          <el-button type="primary" link :icon="EditPen" v-hasPermi="['sys:contract:edit']" @click="openDrawer('编辑', scope.row)">编辑</el-button>
+          <el-button type="success" link :icon="Printer" v-hasPermi="['sys:contract:print']" @click="handleContractPrint(scope.row)">打印</el-button>
+          <el-button type="info" link :icon="Share" v-hasPermi="['sys:contract:audit']" v-if="scope.row.status === 0" @click="startApproval(scope.row)">审核</el-button>
+        </template>
+      </ProTable>
+    </div>
+    <!-- 合同弹窗：放在根元素内部 -->
+    <ContractDialog ref="dialogRef" />
   </div>
-  <ContractDialog ref="dialogRef" />
 </template>
 
 <script setup lang="ts" name="ContractManager">
@@ -37,7 +41,7 @@ import ContractDialog from './components/ContractDialog.vue'
 import { ElMessage } from 'element-plus'
 import { ContractStatusList } from '@/configs/enum'
 
-const proTable = ref()
+const proTable = ref<InstanceType<typeof ProTable> | null>(null)
 const dialogRef = ref()
 
 const props = defineProps({
@@ -125,21 +129,24 @@ const columns: ColumnProps[] = [
   }
 ]
 
-// 打开抽屉
+// 打开抽屉：修复 proTable 空值保护 + 函数引用
 const openDrawer = (title: string, row: Partial<any> = {}) => {
   const params = {
     title,
     row: { ...row },
     isView: title === '查看',
     api: ContractApi.saveOrEdit,
-    getTableList: proTable.value.getTableList,
+    // 关键修复：函数包裹 + 可选链，避免 proTable.value 为 undefined
+    getTableList: () => proTable.value?.getTableList(),
     maxHeight: '550px'
   }
-  dialogRef.value.acceptParams(params)
+  // 可选链保护：避免 dialogRef 未初始化
+  dialogRef.value?.acceptParams(params)
 }
 
-// 开始审核合同
+// 开始审核合同：添加空值保护
 const startApproval = async (row: any) => {
+  if (!proTable.value) return
   await useHandleData(ContractApi.startApproval, { id: row.id }, '发起合同审核')
   proTable.value.getTableList()
 }
@@ -177,8 +184,8 @@ const handleContractPrint = async (contractRow: any) => {
             <td style="border: 1px solid #ddd; padding: 8px;">结束日期：${contract.endTime || '无'}</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">合同金额：${contract.amount || 0}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">已收款：${contract.receivedAmount || 0}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">合同金额：¥${(contract.amount || 0).toFixed(2)}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">已收款：¥${(contract.receivedAmount || 0).toFixed(2)}</td>
           </tr>
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px;" colspan="2">备注：${contract.remark || '无'}</td>
@@ -206,8 +213,8 @@ const handleContractPrint = async (contractRow: any) => {
                 <td style="border: 1px solid #ddd; padding: 8px; text-align: center;"></td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${item.pName || '无'}</td>
                 <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.count || 0}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.price || 0}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.totalPrice || 0}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">¥${(item.price || 0).toFixed(2)}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">¥${(item.totalPrice || 0).toFixed(2)}</td>
               </tr>
             `
                     )
@@ -245,6 +252,7 @@ const handleContractPrint = async (contractRow: any) => {
         table { border-collapse: collapse; }
         table th, table td { border: 1px solid #ddd; padding: 8px; }
         h2 { font-size: 18px; font-weight: bold; }
+        p { margin: 5px 0; }
       `,
       scanStyles: false
     })
@@ -254,9 +262,20 @@ const handleContractPrint = async (contractRow: any) => {
   }
 }
 
-// 删除合同
+// 删除合同（如需启用，取消注释并添加空值保护）
 // const deleteContract = async (params: any) => {
+//   if (!proTable.value) return
 //   await useHandleData(ContractApi.remove, { id: params.id }, `删除合同【${params.name}】`)
 //   proTable.value.getTableList()
 // }
 </script>
+
+<style scoped>
+/* 可选：添加根元素样式，避免布局问题 */
+.contract-manager {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+</style>

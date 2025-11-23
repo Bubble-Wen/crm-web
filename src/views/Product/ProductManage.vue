@@ -41,13 +41,9 @@ import ProductDialog from './components/ProductDialog.vue'
 // 导入重命名后的定时上下架弹窗
 import ProductStateDialog from './components/ProductStateDialog.vue'
 
-// 定义与 ref 同名的变量
-const proTable = ref<InstanceType<typeof ProTable>>()
+// 1. 修正 ProTable ref 定义：初始为 null，明确类型
+const proTable = ref<InstanceType<typeof ProTable> | null>(null)
 
-// 必须通过 defineExpose 暴露 proTable
-defineExpose({
-  proTable
-})
 // 弹窗实例
 const dialogRef = ref()
 const stateDialogRef = ref()
@@ -109,29 +105,38 @@ const columns: ColumnProps[] = [
   }
 ]
 
-// 打开新增/编辑弹窗
+// 2. 修正 openDrawer 方法：函数引用+可选链保护
 const openDrawer = (title: string, row: Partial<any> = {}) => {
-  let params = {
+  const params = {
     title,
     row: { ...row },
     isView: title === '查看',
     api: ProductApi.saveOrEdit,
-    getTableList: ProTable.value.getTableList,
+    // 关键修复：用函数包裹，避免直接执行；可选链防止 undefined
+    getTableList: () => proTable.value?.getTableList(),
     maxHeight: '300px'
   }
-  dialogRef.value.acceptParams(params)
+  // 可选链保护：确保 dialogRef 存在再调用方法
+  dialogRef.value?.acceptParams(params)
 }
 
-// 打开定时上下架弹窗
+// 3. 修正 openStateDialog 方法：同 openDrawer 修复逻辑
 const openStateDialog = (title: string, row: Partial<any> = {}) => {
-  let params = {
+  const params = {
     title,
     row: { ...row },
     isView: false,
     api: ProductApi.saveOrEdit,
-    getTableList: ProTable.value.getTableList,
+    // 关键修复：函数引用+可选链
+    getTableList: () => proTable.value?.getTableList(),
     maxHeight: '150px'
   }
-  stateDialogRef.value.acceptParams(params)
+  // 可选链保护
+  stateDialogRef.value?.acceptParams(params)
 }
+
+// 暴露 proTable（如需父组件调用，无需则可删除）
+defineExpose({
+  proTable
+})
 </script>

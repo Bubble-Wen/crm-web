@@ -44,6 +44,15 @@ export enum IsKeyDecisionMaker {
   NO
 }
 
+/**
+ * 商品状态枚举（对应实体的 Byte 类型 status）
+ */
+export enum ProductStatus {
+  INITIALIZING,
+  ONLINE,
+  OFFLINE
+}
+
 export enum ContractStatus {
   INITIALIZING,
   UNDER_REVIEW,
@@ -52,16 +61,16 @@ export enum ContractStatus {
 }
 
 export enum LeadStatus {
-  NOT_CONVERTED, // 未转化成客户
-  CONVERTED, // 已转化为客户
-  INVALID // 无用线索
+  NOT_CONVERTED, // 未转换
+  CONVERTED, // 已转换
+  INVALID // 无效
 }
 
 export enum FollowUpMethod {
-  PHONE, // 电话
-  VISIT, // 上门拜访
-  WECHAT, // 微信
-  SMS // 短信
+  PHONE_CALL,
+  VISIT,
+  WECHAT,
+  SMS
 }
 
 export const CustomerLevelList: { [key in CustomerLevel]: EnumInfo } = {
@@ -105,18 +114,15 @@ export const IsKeyDecisionMakerList: { [key in IsKeyDecisionMaker]: EnumInfo } =
   [IsKeyDecisionMaker.NO]: { value: 1, label: '否' }
 }
 
-export enum ProductStatus {
-  INITIALIZING,
-  ONLINE,
-  OFFLINE
-}
-
 export const ProductStatusList: { [key in ProductStatus]: EnumInfo } = {
   [ProductStatus.INITIALIZING]: { value: 0, label: '初始化' },
   [ProductStatus.ONLINE]: { value: 1, label: '上架' },
   [ProductStatus.OFFLINE]: { value: 2, label: '下架' }
 }
 
+/**
+ * 合同状态枚举（对应实体的 Byte 类型 status）
+ */
 export const ContractStatusList: { [key in ContractStatus]: EnumInfo } = {
   [ContractStatus.INITIALIZING]: { value: 0, label: '初始化' },
   [ContractStatus.UNDER_REVIEW]: { value: 1, label: '审核中' },
@@ -125,14 +131,23 @@ export const ContractStatusList: { [key in ContractStatus]: EnumInfo } = {
 }
 
 export const LeadStatusList: { [key in LeadStatus]: EnumInfo } = {
-  [LeadStatus.NOT_CONVERTED]: { value: 0, label: '未转化成客户' },
-  [LeadStatus.CONVERTED]: { value: 1, label: '已转化为客户' },
-  [LeadStatus.INVALID]: { value: 2, label: '无用线索' }
+  [LeadStatus.NOT_CONVERTED]: { value: 0, label: '未转换' },
+  [LeadStatus.CONVERTED]: { value: 1, label: '已转换' },
+  [LeadStatus.INVALID]: { value: 2, label: '无效' }
 }
 
 export const FollowUpMethodList: { [key in FollowUpMethod]: EnumInfo } = {
-  [FollowUpMethod.PHONE]: { value: 0, label: '电话' },
-  [FollowUpMethod.VISIT]: { value: 1, label: '上门拜访' },
+  [FollowUpMethod.PHONE_CALL]: { value: 0, label: '电话' },
+  [FollowUpMethod.VISIT]: { value: 1, label: '上门' },
   [FollowUpMethod.WECHAT]: { value: 2, label: '微信' },
   [FollowUpMethod.SMS]: { value: 3, label: '短信' }
+}
+// 商机状态
+export const OpportunityStatusList = {
+  POTENTIAL: { value: 0, label: '潜在' },
+  FOLLOWING: { value: 1, label: '跟进中' },
+  QUOTED: { value: 2, label: '已报价' },
+  NEGOTIATING: { value: 3, label: '谈判中' },
+  SUCCESS: { value: 4, label: '成交' },
+  FAIL: { value: 5, label: '失败' }
 }
